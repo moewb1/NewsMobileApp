@@ -1,97 +1,161 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# News Mobile App (React Native CLI, No Expo)
 
-# Getting Started
+React Native bare app (no Expo) that consumes the GNews API.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## 1. Clone The Project
 
-## Step 1: Start Metro
+```bash
+git clone https://github.com/moewb1/NewsMobileApp.git
+cd NewsMobileApp
+```
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+## 2. Install Node.js (Mac, one-time)
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+If Node is already installed, skip this section.
 
-```sh
-# Using npm
+```bash
+brew install nvm
+mkdir -p ~/.nvm
+echo 'export NVM_DIR="$HOME/.nvm"' >> ~/.zshrc
+echo '[ -s "/opt/homebrew/opt/nvm/nvm.sh" ] && . "/opt/homebrew/opt/nvm/nvm.sh"' >> ~/.zshrc
+source ~/.zshrc
+nvm install --lts
+nvm use --lts
+node -v
+npm -v
+```
+
+## 3. Install Project Dependencies (node_modules)
+
+```bash
+npm install
+```
+
+## 4. Install CocoaPods (Mac, one-time)
+
+If CocoaPods is already installed, skip this section.
+
+```bash
+brew install cocoapods
+pod --version
+```
+
+Then install iOS pods for this project:
+
+```bash
+cd ios
+pod install
+cd ..
+```
+
+## 5. Configure Environment File (Exact Format)
+
+### 5.1 Generate `.env` locally
+
+From the project root, run:
+
+```bash
+cp .env.example .env
+```
+
+### 5.2 Get the API key
+
+Do not hardcode the API key in the repository.
+
+Request access from the project owner:
+- Contact: `<+961 71624288>`
+- Email: `<moetassem.wehbe.01@gmail.com>`
+- Subject: `NewsMobileApp - GNews API Key Request`
+
+Message template:
+```text
+Hi, I need the GNews API key for NewsMobileApp.
+Please share the current key for local development.
+```
+
+### 5.3 Place the API key in `.env` (exactly here)
+
+Open `.env` and set:
+
+```env
+GNEWS_BASE_URL=https://gnews.io/api/v4
+GNEWS_API_KEY=PASTE_THE_KEY_HERE
+```
+
+Example with a real key format:
+
+```env
+GNEWS_BASE_URL=https://gnews.io/api/v4
+GNEWS_API_KEY=aa999aa99aa999a999a
+```
+
+Rules:
+- Do not add quotes.
+- Do not add spaces around `=`.
+- Keep `.env` private (never commit it).
+
+## 6. Android Env Integration Check
+
+In `android/app/build.gradle`, ensure this line exists:
+
+```gradle
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+```
+
+## 7. Run The App
+
+Start Metro in Terminal 1:
+
+```bash
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Build and run your app
+Run iOS in Terminal 2:
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### iOS
-
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
-
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
-
-```sh
-bundle install
-```
-
-Then, and every time you update your native dependencies, run:
-
-```sh
-bundle exec pod install
-```
-
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
-
-```sh
-# Using npm
+```bash
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+Run Android in Terminal 2:
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+```bash
+npm run android
+```
 
-## Step 3: Modify your app
+## 8. Common Fixes
 
-Now that you have successfully run the app, let's make changes!
+If iOS build fails after dependency changes:
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+```bash
+cd ios
+pod install --repo-update
+cd ..
+```
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
+If Metro cache issues appear:
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
+```bash
+npx react-native start --reset-cache
+```
 
-## Congratulations! :tada:
+## 9. Project Structure
 
-You've successfully run and modified your React Native App. :partying_face:
+```text
+src
+|-- api
+|-- components
+|   |-- common
+|   `-- news
+|-- config
+|-- hooks
+|-- screens
+|-- theme
+|-- types
+`-- utils
+```
 
-### Now what?
+## 10. Security Note
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- `.env` is ignored by git and must stay local.
+- Mobile apps are client-side, so API keys are never fully secret in production apps.
+- For real production security, move API calls to your backend and keep keys on server only.
