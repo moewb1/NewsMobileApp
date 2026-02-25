@@ -94,7 +94,7 @@ export function HomeScreen(): React.JSX.Element {
 
             <SearchField
               label="Search by keyword (API)"
-              placeholder="e.g. bitcoin OR tesla"
+              placeholder="enter keyword"
               value={query}
               onChangeText={setQuery}
             />
