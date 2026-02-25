@@ -3,12 +3,12 @@ import {
   Alert,
   FlatList,
   Linking,
-  SafeAreaView,
   StatusBar,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {PrimaryButton} from '../components/common/PrimaryButton';
 import {SearchField} from '../components/common/SearchField';
 import {StatusMessage} from '../components/common/StatusMessage';
