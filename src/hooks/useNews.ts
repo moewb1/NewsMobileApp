@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react';
+import {useState} from 'react';
 import {fetchTopHeadlines, searchArticles} from '../api/newsApi';
 import {NewsArticle} from '../types/news';
 
@@ -7,16 +7,31 @@ const clampMax = (raw: string): number => {
   if (Number.isNaN(parsed)) {
     return 10;
   }
-  return Math.min(Math.max(Math.floor(parsed), 1), 50);
+  return Math.min(Math.max(Math.floor(parsed), 1),10);
 };
 
 export function useNews() {
   const [query, setQuery] = useState('');
-  const [finder, setFinder] = useState('');
+  const [findQuery, setFindQuery] = useState('');
   const [maxResults, setMaxResults] = useState('10');
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const matchesTerm = (article: NewsArticle, term: string): boolean => {
+    const needle = term.toLowerCase();
+    const title = article.title?.toLowerCase() ?? '';
+    const source = article.source?.name?.toLowerCase() ?? '';
+    const description = article.description?.toLowerCase() ?? '';
+    const content = article.content?.toLowerCase() ?? '';
+
+    return (
+      title.includes(needle) ||
+      source.includes(needle) ||
+      description.includes(needle) ||
+      content.includes(needle)
+    );
+  };
 
   const runRequest = async (executor: () => Promise<NewsArticle[]>) => {
     setLoading(true);
@@ -46,47 +61,64 @@ export function useNews() {
     });
   };
 
-  const searchByKeyword = async () => {
-    const trimmedQuery = query.trim();
-    if (!trimmedQuery) {
-      setError('Enter keywords before searching.');
-      return;
-    }
-
-    await runRequest(async () => {
-      const response = await searchArticles(trimmedQuery, {
-        max: clampMax(maxResults),
-        lang: 'en',
-      });
-      return response.articles;
+  const queryByKeyword = async (keyword: string): Promise<NewsArticle[]> => {
+    const response = await searchArticles(keyword, {
+      max: clampMax(maxResults),
+      lang: 'en',
+      inFields: 'title,description,content',
     });
+    return response.articles;
   };
 
-  const visibleArticles = useMemo(() => {
-    const term = finder.trim().toLowerCase();
-    if (!term) {
-      return articles;
-    }
-
-    return articles.filter(item => {
-      const title = item.title?.toLowerCase() ?? '';
-      const authorOrSource = item.source?.name?.toLowerCase() ?? '';
-      return title.includes(term) || authorOrSource.includes(term);
+  const queryByTitleOrAuthor = async (titleOrAuthor: string): Promise<NewsArticle[]> => {
+    const response = await searchArticles(titleOrAuthor, {
+      max: clampMax(maxResults),
+      lang: 'en',
+      inFields: 'title,description,content',
     });
-  }, [articles, finder]);
+
+    return response.articles.filter(item => matchesTerm(item, titleOrAuthor));
+  };
+
+  const runBestSearch = async () => {
+    const keyword = query.trim();
+    const titleOrAuthor = findQuery.trim();
+
+    await runRequest(async () => {
+      if (!keyword && !titleOrAuthor) {
+        const response = await fetchTopHeadlines({
+          max: clampMax(maxResults),
+          lang: 'en',
+          country: 'us',
+        });
+        return response.articles;
+      }
+
+      if (keyword && titleOrAuthor) {
+        const keywordResults = await queryByKeyword(keyword);
+        return keywordResults.filter(item => matchesTerm(item, titleOrAuthor));
+      }
+
+      if (keyword) {
+        return queryByKeyword(keyword);
+      }
+
+      return queryByTitleOrAuthor(titleOrAuthor);
+    });
+  };
 
   return {
     query,
     setQuery,
-    finder,
-    setFinder,
+    findQuery,
+    setFindQuery,
     maxResults,
     setMaxResults,
     loading,
     error,
     loadedCount: articles.length,
-    visibleArticles,
+    articles,
     loadTopHeadlines,
-    searchByKeyword,
+    runBestSearch,
   };
 }

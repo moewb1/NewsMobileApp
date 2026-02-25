@@ -8,7 +8,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {SafeAreaView} from 'react-native-safe-area-context';
 import {PrimaryButton} from '../components/common/PrimaryButton';
 import {SearchField} from '../components/common/SearchField';
 import {StatusMessage} from '../components/common/StatusMessage';
@@ -22,16 +22,16 @@ export function HomeScreen(): React.JSX.Element {
   const {
     query,
     setQuery,
-    finder,
-    setFinder,
+    findQuery,
+    setFindQuery,
     maxResults,
     setMaxResults,
     loading,
     error,
     loadedCount,
-    visibleArticles,
+    articles,
     loadTopHeadlines,
-    searchByKeyword,
+    runBestSearch,
   } = useNews();
 
   const [hasLoaded, setHasLoaded] = useState(false);
@@ -42,7 +42,7 @@ export function HomeScreen(): React.JSX.Element {
   };
 
   const handleSearch = async () => {
-    await searchByKeyword();
+    await runBestSearch();
     setHasLoaded(true);
   };
 
@@ -66,13 +66,32 @@ export function HomeScreen(): React.JSX.Element {
     ? 'No articles found. Try a different keyword.'
     : 'Tap "Top Headlines" to load articles.';
 
+  const hasKeyword = query.trim().length > 0;
+  const hasTitleOrAuthor = findQuery.trim().length > 0;
+
+  const primaryActionLabel = !hasKeyword && !hasTitleOrAuthor
+    ? 'Top Headlines'
+    : hasKeyword && hasTitleOrAuthor
+      ? 'Search with Filters'
+      : hasKeyword
+        ? 'Search Keywords'
+        : 'Find Title/Author';
+
+  const modeHint = !hasKeyword && !hasTitleOrAuthor
+    ? 'No input: fetch top headlines.'
+    : hasKeyword && hasTitleOrAuthor
+      ? 'Both inputs: keyword search first, then narrowed by title/author.'
+      : hasKeyword
+        ? 'Keyword mode: search by keyword.'
+        : 'Title/author mode: find by title or author/source.';
+
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <StatusBar barStyle='dark-content' backgroundColor={colors.background} />
       <FlatList
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
-        data={visibleArticles}
+        keyboardShouldPersistTaps='handled'
+        data={articles}
         renderItem={renderItem}
         keyExtractor={(item, index) => `${item.url}-${index}`}
         onRefresh={handleTopHeadlines}
@@ -81,52 +100,60 @@ export function HomeScreen(): React.JSX.Element {
           <View style={styles.header}>
             <Text style={styles.title}>News Mobile App</Text>
             <Text style={styles.subtitle}>
-              Fetch top headlines, search by keyword, and find by title/author.
+              Fetch top headlines. Search by keyword and optionally narrow by title or
+              author/source in one step.
             </Text>
 
-            <SearchField
-              label="Number of articles (1-50)"
-              placeholder="10"
-              value={maxResults}
-              onChangeText={setMaxResults}
-              keyboardType="number-pad"
-            />
+            <View style={styles.searchCard}>
+              <Text style={styles.searchCardTitle}>Search Controls</Text>
+              <Text style={styles.searchCardHint}>{modeHint}</Text>
 
-            <SearchField
-              label="Search by keyword (API)"
-              placeholder="enter keyword"
-              value={query}
-              onChangeText={setQuery}
-            />
+              <SearchField
+                label='Number of articles (1-10)'
+                placeholder='10'
+                value={maxResults}
+                onChangeText={setMaxResults}
+                keyboardType='number-pad'
+              />
 
-            <View style={styles.actions}>
-              <View style={styles.actionItem}>
-                <PrimaryButton
-                  label="Top Headlines"
-                  onPress={handleTopHeadlines}
-                  disabled={loading}
-                />
+              <SearchField
+                label='Keyword (API)'
+                placeholder='e.g. bitcoin, tesla, election'
+                value={query}
+                onChangeText={setQuery}
+              />
+              <SearchField
+                label='Title or author/source (optional)'
+                placeholder='e.g. Elon Musk or BBC News'
+                value={findQuery}
+                onChangeText={setFindQuery}
+              />
+
+              <View style={styles.actions}>
+                <View style={styles.actionItem}>
+                  <PrimaryButton
+                    label={primaryActionLabel}
+                    onPress={handleSearch}
+                    disabled={loading}
+                  />
+                </View>
               </View>
-              <View style={styles.actionSpacer} />
-              <View style={styles.actionItem}>
-                <PrimaryButton
-                  label="Search Keywords"
-                  onPress={handleSearch}
-                  disabled={loading}
-                />
-              </View>
+
+              {(hasKeyword || hasTitleOrAuthor) && (
+                <View style={styles.secondaryAction}>
+                  <PrimaryButton
+                    label='Top Headlines'
+                    onPress={handleTopHeadlines}
+                    disabled={loading}
+                    variant='secondary'
+                  />
+                </View>
+              )}
             </View>
 
-            <SearchField
-              label="Find by title or author/source (local)"
-              placeholder="Type title or source"
-              value={finder}
-              onChangeText={setFinder}
-            />
-
-            {error ? <StatusMessage tone="error" message={error} /> : null}
+            {error ? <StatusMessage tone='error' message={error} /> : null}
             <Text style={styles.countLabel}>
-              Showing {visibleArticles.length} article(s) from {loadedCount} loaded
+              Showing {articles.length} article(s) from {loadedCount} loaded
             </Text>
           </View>
         }
@@ -168,12 +195,36 @@ const styles = StyleSheet.create({
   actionItem: {
     flex: 1,
   },
-  actionSpacer: {
-    width: spacing.sm,
+  secondaryAction: {
+    marginTop: spacing.sm,
   },
   countLabel: {
     marginTop: spacing.md,
     fontSize: 12,
+    color: colors.textSecondary,
+  },
+  searchCard: {
+    marginTop: spacing.lg,
+    backgroundColor: colors.card,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.lg,
+    shadowColor: '#102A43',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  searchCardTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  searchCardHint: {
+    marginTop: spacing.xs,
+    fontSize: 12,
+    lineHeight: 18,
     color: colors.textSecondary,
   },
 });
